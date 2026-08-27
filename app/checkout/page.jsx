@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/checkout/page.jsx
 // LOCATION: /app/checkout/page.jsx
-// PURPOSE: Checkout with payment methods
+// PURPOSE: Checkout with no login required
 // ============================================
 
 'use client'
@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { useCartStore } from '@/store/cart'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -24,6 +25,11 @@ export default function CheckoutPage() {
     const formData = new FormData(e.target)
     
     const orderData = {
+      // Customer details (NO LOGIN REQUIRED)
+      customerName: formData.get('name'),
+      customerEmail: formData.get('email') || null,
+      customerPhone: formData.get('phone'),
+      
       items: items.map(item => ({
         variantId: item.id,
         quantity: item.quantity,
@@ -32,12 +38,15 @@ export default function CheckoutPage() {
         color: item.color,
         productName: item.name
       })),
+      
       subtotal: total,
-      shipping: 0,
       tax: total * 0.1,
+      shipping: 0,
       total: total + (total * 0.1),
+      
       paymentMethod,
       paymentNote: formData.get('paymentNote') || '',
+      
       shippingAddress: {
         name: formData.get('name'),
         street: formData.get('street'),
@@ -47,6 +56,7 @@ export default function CheckoutPage() {
         country: formData.get('country'),
         phone: formData.get('phone')
       },
+      
       deliveryNotes: formData.get('deliveryNotes')
     }
 
@@ -61,7 +71,7 @@ export default function CheckoutPage() {
       
       if (data.success) {
         clearCart()
-        alert('✅ Order placed successfully! Check your email for confirmation.')
+        alert('✅ Order placed successfully!')
         router.push(`/orders/${data.orderId}`)
       } else {
         alert('❌ Failed to place order: ' + data.error)
@@ -89,49 +99,62 @@ export default function CheckoutPage() {
       <h1 className="text-2xl font-bold mb-6">Checkout</h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Shipping Address */}
+        {/* Customer Details */}
         <div className="bg-white p-6 rounded-lg border">
-          <h2 className="font-semibold mb-4">Shipping Address</h2>
+          <h2 className="font-semibold mb-4">Contact Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               name="name"
-              placeholder="Full Name"
+              placeholder="Full Name *"
               required
               className="p-2 border rounded"
             />
             <input
               name="phone"
-              placeholder="Phone Number"
+              placeholder="Phone Number *"
               required
               className="p-2 border rounded"
             />
             <input
+              name="email"
+              type="email"
+              placeholder="Email (optional)"
+              className="p-2 border rounded md:col-span-2"
+            />
+          </div>
+        </div>
+
+        {/* Shipping Address */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h2 className="font-semibold mb-4">Shipping Address</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
               name="street"
-              placeholder="Street Address"
+              placeholder="Street Address *"
               required
               className="p-2 border rounded md:col-span-2"
             />
             <input
               name="city"
-              placeholder="City"
+              placeholder="City *"
               required
               className="p-2 border rounded"
             />
             <input
               name="state"
-              placeholder="State"
+              placeholder="State *"
               required
               className="p-2 border rounded"
             />
             <input
               name="zip"
-              placeholder="ZIP Code"
+              placeholder="ZIP Code *"
               required
               className="p-2 border rounded"
             />
             <input
               name="country"
-              placeholder="Country"
+              placeholder="Country *"
               required
               className="p-2 border rounded md:col-span-2"
             />
