@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/api/orders/route.js
 // LOCATION: /app/api/orders/route.js
-// PURPOSE: Create order (NO LOGIN REQUIRED)
+// PURPOSE: Create order with WhatsApp as identity
 // ============================================
 
 import { prisma } from '@/lib/prisma'
@@ -12,8 +12,8 @@ export async function POST(request) {
     const data = await request.json()
     const { 
       customerName,
+      customerWhatsApp,
       customerEmail,
-      customerPhone,
       items, 
       shippingAddress, 
       paymentMethod, 
@@ -25,7 +25,38 @@ export async function POST(request) {
       total
     } = data
 
-    // Check stock availability
+    // Clean WhatsApp number
+    const cleanWhatsApp = customerWhatsApp.replace(/\s/g, '').replace(/^\+/, '')
+
+    // 🎯 Find or create customer
+    let customer = await prisma.customer.findUnique({
+      where: { whatsappNumber: cleanWhatsApp }
+    })
+
+    if (!customer) {
+      // Create new customer
+      customer = await prisma.customer.create({
+        data: {
+          whatsappNumber: cleanWhatsApp,
+          name: customerName,
+          email: customerEmail || null,
+          address: `${shippingAddress.street}, ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`
+        }
+      })
+    } else {
+      // Update customer info if changed
+      if (customer.name !== customerName || customer.email !== customerEmail) {
+        customer = await prisma.customer.update({
+          where: { id: customer.id },
+          data: {
+            name: customerName,
+            email: customerEmail || customer.email
+          }
+        })
+      }
+    }
+
+    // Check stock
     for (const item of items) {
       const product = await prisma.product.findUnique({
         where: { id: item.productId }
@@ -38,7 +69,6 @@ export async function POST(request) {
       }
 
       if (product.isVariant) {
-        // Check variant stock
         const variantKey = `variant${item.variantIndex}_stock`
         const currentStock = (product as any)[variantKey] || 0
         if (currentStock < item.quantity) {
@@ -55,14 +85,14 @@ export async function POST(request) {
       }
     }
 
-    // Create order and reduce stock in transaction
+    // Create order
     const order = await prisma.$transaction(async (prisma) => {
-      // Create order with customer details
       const newOrder = await prisma.order.create({
         data: {
+          customerId: customer.id,
           customerName,
+          customerWhatsApp: cleanWhatsApp,
           customerEmail,
-          customerPhone,
           paymentMethod,
           paymentStatus: paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'NOT_REQUIRED',
           paymentNote,
@@ -119,26 +149,19 @@ export async function POST(request) {
       return newOrder
     })
 
-    // Send notification to admin email
-    try {
-      const adminEmail = process.env.ADMIN_EMAIL || 'your-email@gmail.com'
-      
-      // You can implement email notification here
-      // For now, we'll just log it
-      console.log(`📦 New Order: #${order.id}`)
-      console.log(`Customer: ${customerName} (${customerPhone})`)
-      console.log(`Total: $${total}`)
-      
-      // TODO: Send email notification to admin
-      // await sendEmail({ ... })
-      
-    } catch (error) {
-      console.error('Notification error:', error)
-    }
+    // 🎯 Send WhatsApp notification to customer
+    // WhatsApp link will be generated in admin panel
+    
+    // Notify admin
+    console.log(`📦 New Order: #${order.id}`)
+    console.log(`Customer: ${customerName} (${cleanWhatsApp})`)
+    console.log(`Total: $${total}`)
 
     return NextResponse.json({ 
       success: true, 
       orderId: order.id,
+      customerId: customer.id,
+      isNewCustomer: customer.createdAt === customer.updatedAt,
       message: 'Order placed successfully!'
     })
 
