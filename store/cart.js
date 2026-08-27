@@ -1,7 +1,7 @@
 // ============================================
 // FILE: store/cart.js
 // LOCATION: /store/cart.js
-// PURPOSE: Shopping cart state management
+// PURPOSE: Zustand cart store with persistence
 // ============================================
 
 import { create } from 'zustand'
@@ -60,7 +60,7 @@ export const useCartStore = create(
       }
     }),
     {
-      name: 'cart-storage' // localStorage key
+      name: 'cart-storage'
     }
   )
 )
