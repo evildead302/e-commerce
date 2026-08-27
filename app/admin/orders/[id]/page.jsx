@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/admin/orders/[id]/page.jsx
 // LOCATION: /app/admin/orders/[id]/page.jsx
-// PURPOSE: Order detail with WhatsApp link generator
+// PURPOSE: Order detail with WhatsApp (NO LOGIN)
 // ============================================
 
 'use client'
@@ -43,7 +43,7 @@ export default function OrderDetail({ params }) {
     ).join('\n') || ''
 
     let message = `🛍️ *Order Update - #${orderData.id?.slice(-6) || 'N/A'}*\n\n`
-    message += `Dear ${orderData.user?.name || 'Customer'},\n\n`
+    message += `Dear ${orderData.customerName || 'Customer'},\n\n`
 
     switch(orderData.status) {
       case 'CONFIRMED':
@@ -89,7 +89,7 @@ export default function OrderDetail({ params }) {
 
   // 🎯 Get WhatsApp link
   const getWhatsAppLink = () => {
-    const phone = order?.shippingAddress?.phone || ''
+    const phone = order?.customerPhone || order?.shippingAddress?.phone || ''
     const cleanPhone = phone.replace(/\D/g, '')
     const message = encodeURIComponent(whatsappMessage)
     return `https://wa.me/${cleanPhone}?text=${message}`
@@ -131,7 +131,7 @@ export default function OrderDetail({ params }) {
   if (loading) return <div className="text-center py-12">Loading order...</div>
   if (!order) return <div className="text-center py-12">Order not found</div>
 
-  const address = order.shippingAddress || {}
+  const phone = order.customerPhone || order.shippingAddress?.phone || ''
 
   return (
     <div>
@@ -144,7 +144,7 @@ export default function OrderDetail({ params }) {
         </div>
         <div className="flex gap-2">
           {/* WhatsApp Button */}
-          {address.phone && (
+          {phone && (
             <>
               <a
                 href={getWhatsAppLink()}
@@ -224,6 +224,15 @@ export default function OrderDetail({ params }) {
           
           <div className="space-y-4">
             <div>
+              <h3 className="font-medium text-gray-600">Customer</h3>
+              <p className="font-medium">{order.customerName}</p>
+              <p className="text-sm">{order.customerPhone}</p>
+              {order.customerEmail && (
+                <p className="text-sm text-gray-500">{order.customerEmail}</p>
+              )}
+            </div>
+
+            <div>
               <h3 className="font-medium text-gray-600">Items</h3>
               <div className="space-y-2 mt-2">
                 {order.items?.map((item, index) => (
@@ -258,11 +267,11 @@ export default function OrderDetail({ params }) {
           <h2 className="font-bold mb-4">Shipping Address</h2>
           
           <div className="space-y-1 text-sm">
-            <p>{address.name}</p>
-            <p>{address.street}</p>
-            <p>{address.city}, {address.state} {address.zip}</p>
-            <p>{address.country}</p>
-            <p className="font-medium">Phone: {address.phone}</p>
+            <p>{order.shippingAddress?.name}</p>
+            <p>{order.shippingAddress?.street}</p>
+            <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zip}</p>
+            <p>{order.shippingAddress?.country}</p>
+            <p className="font-medium">Phone: {order.shippingAddress?.phone}</p>
           </div>
 
           {order.deliveryNotes && (
