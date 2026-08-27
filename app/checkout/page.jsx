@@ -1,12 +1,12 @@
 // ============================================
 // FILE: app/checkout/page.jsx
 // LOCATION: /app/checkout/page.jsx
-// PURPOSE: Checkout with no login required
+// PURPOSE: Checkout with WhatsApp as identity
 // ============================================
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCartStore } from '@/store/cart'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -16,7 +16,45 @@ export default function CheckoutPage() {
   const { items, clearCart, getTotal } = useCartStore()
   const [loading, setLoading] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY')
+  const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [existingCustomer, setExistingCustomer] = useState(null)
+  const [loadingCustomer, setLoadingCustomer] = useState(false)
+  
   const total = getTotal()
+
+  // 🎯 Check if customer exists by WhatsApp number
+  const checkCustomer = async (phone) => {
+    if (phone.length < 10) return
+    
+    setLoadingCustomer(true)
+    try {
+      const res = await fetch(`/api/customer?phone=${encodeURIComponent(phone)}`)
+      const data = await res.json()
+      
+      if (data.exists) {
+        setExistingCustomer(data.customer)
+        setCustomerName(data.customer.name)
+        // Pre-fill address if available
+        if (data.customer.address) {
+          // You can pre-fill address fields here
+        }
+      } else {
+        setExistingCustomer(null)
+      }
+    } catch (error) {
+      console.error('Error checking customer:', error)
+    } finally {
+      setLoadingCustomer(false)
+    }
+  }
+
+  // 🎯 Auto-check when WhatsApp number changes
+  useEffect(() => {
+    if (whatsappNumber.length >= 10) {
+      checkCustomer(whatsappNumber)
+    }
+  }, [whatsappNumber])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,10 +63,10 @@ export default function CheckoutPage() {
     const formData = new FormData(e.target)
     
     const orderData = {
-      // Customer details (NO LOGIN REQUIRED)
+      // 🎯 WhatsApp number is the key identifier
+      customerWhatsApp: formData.get('whatsapp'),
       customerName: formData.get('name'),
       customerEmail: formData.get('email') || null,
-      customerPhone: formData.get('phone'),
       
       items: items.map(item => ({
         variantId: item.id,
@@ -54,7 +92,7 @@ export default function CheckoutPage() {
         state: formData.get('state'),
         zip: formData.get('zip'),
         country: formData.get('country'),
-        phone: formData.get('phone')
+        phone: formData.get('whatsapp')
       },
       
       deliveryNotes: formData.get('deliveryNotes')
@@ -71,7 +109,7 @@ export default function CheckoutPage() {
       
       if (data.success) {
         clearCart()
-        alert('✅ Order placed successfully!')
+        alert('✅ Order placed successfully! Check WhatsApp for confirmation.')
         router.push(`/orders/${data.orderId}`)
       } else {
         alert('❌ Failed to place order: ' + data.error)
@@ -99,28 +137,57 @@ export default function CheckoutPage() {
       <h1 className="text-2xl font-bold mb-6">Checkout</h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer Details */}
+        {/* 🎯 Customer Details with WhatsApp */}
         <div className="bg-white p-6 rounded-lg border">
           <h2 className="font-semibold mb-4">Contact Details</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            📱 We'll send order updates on WhatsApp
+          </p>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="name"
-              placeholder="Full Name *"
-              required
-              className="p-2 border rounded"
-            />
-            <input
-              name="phone"
-              placeholder="Phone Number *"
-              required
-              className="p-2 border rounded"
-            />
-            <input
-              name="email"
-              type="email"
-              placeholder="Email (optional)"
-              className="p-2 border rounded md:col-span-2"
-            />
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                WhatsApp Number * <span className="text-xs text-gray-400">(with country code)</span>
+              </label>
+              <input
+                name="whatsapp"
+                placeholder="+92 300 1234567"
+                required
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                className="p-2 border rounded w-full"
+              />
+              {loadingCustomer && (
+                <p className="text-xs text-blue-500 mt-1">Checking...</p>
+              )}
+              {existingCustomer && (
+                <p className="text-xs text-green-500 mt-1">
+                  ✅ Welcome back, {existingCustomer.name}!
+                </p>
+              )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Full Name *</label>
+              <input
+                name="name"
+                placeholder="John Doe"
+                required
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="p-2 border rounded w-full"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Email (optional)</label>
+              <input
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                className="p-2 border rounded w-full"
+              />
+            </div>
           </div>
         </div>
 
@@ -192,7 +259,7 @@ export default function CheckoutPage() {
               />
               <div>
                 <p className="font-medium">Bank Transfer</p>
-                <p className="text-sm text-gray-500">Transfer and upload screenshot</p>
+                <p className="text-sm text-gray-500">Transfer and confirm via WhatsApp</p>
               </div>
             </label>
           </div>
