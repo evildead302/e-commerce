@@ -1,0 +1,133 @@
+// ============================================
+// FILE: prisma/schema.prisma
+// LOCATION: /prisma/schema.prisma
+// PURPOSE: Database schema
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  whatsappNumber String   @unique
+  name           String
+  email          String?
+  address        String?
+  orders         Order[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  categories  String[]
+  brand       String?
+  material    String?
+  isVariant   Boolean  @default(false)
+  
+  image1      String?
+  image2      String?
+  image3      String?
+  image4      String?
+  image5      String?
+  
+  price       Float?
+  stock       Int?
+  
+  variant1_label  String?
+  variant1_stock  Int?
+  variant1_price  Float?
+  
+  variant2_label  String?
+  variant2_stock  Int?
+  variant2_price  Float?
+  
+  variant3_label  String?
+  variant3_stock  Int?
+  variant3_price  Float?
+  
+  variant4_label  String?
+  variant4_stock  Int?
+  variant4_price  Float?
+  
+  variant5_label  String?
+  variant5_stock  Int?
+  variant5_price  Float?
+  
+  variant6_label  String?
+  variant6_stock  Int?
+  variant6_price  Float?
+  
+  isNew       Boolean  @default(false)
+  isSale      Boolean  @default(false)
+  discount    Int?     @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  
+  customerId        String?
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  
+  customerName      String
+  customerWhatsApp  String
+  customerEmail     String?
+  
+  items             OrderItem[]
+  
+  subtotal          Float
+  tax               Float    @default(0)
+  shipping          Float    @default(0)
+  total             Float
+  
+  paymentMethod     String
+  paymentStatus     String   @default("PENDING")
+  paymentNote       String?
+  
+  shippingAddress   Json
+  deliveryNotes     String?
+  
+  trackingNumber    String?
+  trackingUrl       String?
+  shippedDate       DateTime?
+  deliveredDate     DateTime?
+  
+  status            String   @default("PENDING")
+  statusHistory     Json
+  stockReduced      Boolean  @default(false)
+  whatsappSent      Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: CASCADE)
+  variantId   String
+  quantity    Int
+  price       Float
+  size        String
+  color       String
+  productName String
+
+  @@map("order_items")
+}
