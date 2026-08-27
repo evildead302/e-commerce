@@ -268,3 +268,45 @@ export default function OrderDetail({ params }) {
                 Status: {order.paymentStatus}
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Shipping Address */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="font-bold mb-4">Shipping Address</h2>
+          
+          <div className="space-y-1 text-sm">
+            <p>{order.shippingAddress?.name}</p>
+            <p>{order.shippingAddress?.street}</p>
+            <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zip}</p>
+            <p>{order.shippingAddress?.country}</p>
+            <p className="font-medium">Phone: {order.shippingAddress?.phone}</p>
+          </div>
+
+          {order.deliveryNotes && (
+            <div className="mt-4 p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Notes:</span> {order.deliveryNotes}
+              </p>
+            </div>
+          )}
+
+          {/* WhatsApp Preview */}
+          <div className="mt-6 border-t pt-4">
+            <button
+              onClick={() => setShowWhatsAppPreview(!showWhatsAppPreview)}
+              className="text-sm text-blue-500 hover:underline"
+            >
+              {showWhatsAppPreview ? 'Hide' : 'Show'} WhatsApp Preview
+            </button>
+            {showWhatsAppPreview && (
+              <div className="mt-2 bg-gray-50 p-3 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-y-auto border">
+                {whatsappMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
