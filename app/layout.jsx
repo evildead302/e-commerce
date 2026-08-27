@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/layout.jsx
 // LOCATION: /app/layout.jsx
-// PURPOSE: Root layout for the entire store
+// PURPOSE: Root layout
 // ============================================
 
 import './globals.css'
