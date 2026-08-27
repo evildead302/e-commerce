@@ -9,9 +9,6 @@ const nextConfig = {
   images: {
     domains: ['i.postimg.cc', 'i.ibb.co', 'localhost'],
   },
-  experimental: {
-    serverActions: true,
-  },
 }
 
 module.exports = nextConfig
