@@ -1,23 +1,29 @@
 // ============================================
 // FILE: app/api/orders/route.js
 // LOCATION: /app/api/orders/route.js
-// PURPOSE: Create new order with stock reduction
+// PURPOSE: Create order (NO LOGIN REQUIRED)
 // ============================================
 
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 
-export async function POST(request: Request) {
+export async function POST(request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const data = await request.json()
-    const { items, shippingAddress, paymentMethod, paymentNote, deliveryNotes } = data
+    const { 
+      customerName,
+      customerEmail,
+      customerPhone,
+      items, 
+      shippingAddress, 
+      paymentMethod, 
+      paymentNote, 
+      deliveryNotes,
+      subtotal,
+      tax,
+      shipping,
+      total
+    } = data
 
     // Check stock availability
     for (const item of items) {
@@ -51,19 +57,21 @@ export async function POST(request: Request) {
 
     // Create order and reduce stock in transaction
     const order = await prisma.$transaction(async (prisma) => {
-      // Create order
+      // Create order with customer details
       const newOrder = await prisma.order.create({
         data: {
-          userId: session.user.id,
+          customerName,
+          customerEmail,
+          customerPhone,
           paymentMethod,
           paymentStatus: paymentMethod === 'BANK_TRANSFER' ? 'PENDING' : 'NOT_REQUIRED',
           paymentNote,
           shippingAddress,
           deliveryNotes,
-          subtotal: data.subtotal,
-          tax: data.tax,
-          shipping: data.shipping,
-          total: data.total,
+          subtotal,
+          tax,
+          shipping,
+          total,
           status: 'PENDING',
           stockReduced: true,
           items: {
@@ -78,8 +86,7 @@ export async function POST(request: Request) {
           }
         },
         include: {
-          items: true,
-          user: true
+          items: true
         }
       })
 
@@ -111,6 +118,23 @@ export async function POST(request: Request) {
 
       return newOrder
     })
+
+    // Send notification to admin email
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'your-email@gmail.com'
+      
+      // You can implement email notification here
+      // For now, we'll just log it
+      console.log(`📦 New Order: #${order.id}`)
+      console.log(`Customer: ${customerName} (${customerPhone})`)
+      console.log(`Total: $${total}`)
+      
+      // TODO: Send email notification to admin
+      // await sendEmail({ ... })
+      
+    } catch (error) {
+      console.error('Notification error:', error)
+    }
 
     return NextResponse.json({ 
       success: true, 
