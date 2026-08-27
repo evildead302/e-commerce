@@ -8,7 +8,6 @@ import { prisma } from '@/lib/prisma'
 import ProductGrid from '@/components/products/ProductGrid'
 
 export default async function HomePage() {
-  // Get featured products (new arrivals)
   const products = await prisma.product.findMany({
     where: { isNew: true },
     orderBy: { createdAt: 'desc' },
@@ -17,7 +16,6 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* Hero Section */}
       <section className="bg-black text-white py-20 px-6 text-center">
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
           Premium Clothing
@@ -33,7 +31,6 @@ export default async function HomePage() {
         </a>
       </section>
 
-      {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold mb-6">New Arrivals</h2>
         <ProductGrid products={products} />
