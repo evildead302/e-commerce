@@ -3,14 +3,11 @@
 // LOCATION: /app/api/products/[id]/route.js
 // PURPOSE: Get single product by ID
 // ============================================
-
+// ✅ FIXED - No TypeScript syntax
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request, { params }) {
   try {
     const product = await prisma.product.findUnique({
       where: { id: params.id }
