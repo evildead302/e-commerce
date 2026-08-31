@@ -105,7 +105,7 @@ export async function POST(request) {
           status: 'PENDING',
           stockReduced: true,
           items: {
-            create: items.map((item: any) => ({
+            create: items.map((item) => ({
               variantId: item.variantId,
               quantity: item.quantity,
               price: item.price,
