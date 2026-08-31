@@ -23,10 +23,7 @@ export async function GET(request, { params }) {
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request, { params }) {
   try {
     const data = await request.json()
     const product = await prisma.product.update({
@@ -39,10 +36,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request, { params }) {
   try {
     await prisma.product.delete({
       where: { id: params.id }
