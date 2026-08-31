@@ -128,7 +128,7 @@ export async function POST(request) {
 
         if (product.isVariant) {
           const variantKey = `variant${item.variantIndex}_stock`
-          const currentStock = (product as any)[variantKey] || 0
+          const currentStock = product[variantKey] || 0
           await prisma.$executeRaw`
             UPDATE Product 
             SET ${prisma.raw(variantKey)} = ${currentStock - item.quantity}
