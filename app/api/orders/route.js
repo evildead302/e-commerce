@@ -70,7 +70,7 @@ export async function POST(request) {
 
       if (product.isVariant) {
         const variantKey = `variant${item.variantIndex}_stock`
-        const currentStock = (product as any)[variantKey] || 0
+        const currentStock = product[variantKey] || 0
         if (currentStock < item.quantity) {
           return NextResponse.json({ 
             error: `Not enough stock for ${product.name} - ${item.size} ${item.color}` 
