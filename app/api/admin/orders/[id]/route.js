@@ -7,10 +7,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request, { params }) {
   try {
     const order = await prisma.order.findUnique({
       where: { id: params.id },
