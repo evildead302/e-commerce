@@ -1,6 +1,12 @@
+// ============================================
+// FILE: app/products/ProductsContent.jsx
+// LOCATION: /app/products/ProductsContent.jsx
+// PURPOSE: Product listing content with filters (Client Component)
+// ============================================
+
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ProductGrid from '@/components/products/ProductGrid'
 import CategoryFilter from '@/components/products/CategoryFilter'
@@ -43,6 +49,7 @@ export default function ProductsContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">All Products</h1>
+      
       <div className="grid md:grid-cols-4 gap-8">
         <div className="md:col-span-1">
           <CategoryFilter 
@@ -56,4 +63,4 @@ export default function ProductsContent() {
       </div>
     </div>
   )
-}
+        }
