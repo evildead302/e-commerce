@@ -4,7 +4,7 @@
 // PURPOSE: Admin dashboard with stats
 // ============================================
 
-'use client'
+''use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   })
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -27,47 +28,65 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       const res = await fetch('/api/admin/dashboard')
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
       const data = await res.json()
-      setStats(data.stats)
-      setRecentOrders(data.recentOrders)
-    } catch (error) {
-      console.error('Error fetching dashboard:', error)
+      setStats(data.stats || { totalOrders: 0, pendingOrders: 0, totalProducts: 0, lowStock: 0, revenue: 0 })
+      setRecentOrders(data.recentOrders || [])
+    } catch (err) {
+      console.error('Dashboard error:', err)
+      setError('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading) return <div className="text-center py-12">Loading dashboard...</div>
+  if (loading) {
+    return <div className="text-center py-12">Loading dashboard...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-500">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <p className="text-sm text-gray-500">Total Orders</p>
-          <p className="text-2xl font-bold">{stats.totalOrders}</p>
+          <p className="text-2xl font-bold">{stats.totalOrders || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <p className="text-sm text-gray-500">Pending Orders</p>
-          <p className="text-2xl font-bold text-yellow-500">{stats.pendingOrders}</p>
+          <p className="text-2xl font-bold text-yellow-500">{stats.pendingOrders || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <p className="text-sm text-gray-500">Total Products</p>
-          <p className="text-2xl font-bold">{stats.totalProducts}</p>
+          <p className="text-2xl font-bold">{stats.totalProducts || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <p className="text-sm text-gray-500">Low Stock</p>
-          <p className="text-2xl font-bold text-red-500">{stats.lowStock}</p>
+          <p className="text-2xl font-bold text-red-500">{stats.lowStock || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <p className="text-sm text-gray-500">Revenue</p>
-          <p className="text-2xl font-bold text-green-600">${stats.revenue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-600">${(stats.revenue || 0).toFixed(2)}</p>
         </div>
       </div>
 
-      {/* Recent Orders */}
       <div className="bg-white rounded-lg border">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold">Recent Orders</h2>
@@ -76,27 +95,30 @@ export default function AdminDashboard() {
           </Link>
         </div>
         <div className="divide-y">
-          {recentOrders.map((order) => (
-            <div key={order.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
-              <div>
-                <p className="font-medium">Order #{order.id.slice(-6)}</p>
-                <p className="text-sm text-gray-500">{order.user?.name}</p>
-                <p className="text-sm text-gray-500">{order.items?.length || 0} items</p>
-              </div>
-              <div className="text-right">
-                <p className="font-medium">${order.total.toFixed(2)}</p>
-                <span className={`
-                  text-xs px-2 py-1 rounded-full
-                  ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
+          {recentOrders.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">No orders yet</div>
+          ) : (
+            recentOrders.map((order) => (
+              <div key={order.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                <div>
+                  <p className="font-medium">Order #{order.id?.slice(-6) || 'N/A'}</p>
+                  <p className="text-sm text-gray-500">{order.customerName || order.user?.name || 'Unknown'}</p>
+                  <p className="text-sm text-gray-500">{order.items?.length || 0} items</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">${(order.total || 0).toFixed(2)}</p>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
                     order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
                     order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-blue-100 text-blue-700'}
-                `}>
-                  {order.status}
-                </span>
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    {order.status || 'PENDING'}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
