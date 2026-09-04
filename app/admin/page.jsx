@@ -4,7 +4,7 @@
 // PURPOSE: Admin dashboard with stats
 // ============================================
 
-''use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -34,9 +34,10 @@ export default function AdminDashboard() {
       const data = await res.json()
       setStats(data.stats || { totalOrders: 0, pendingOrders: 0, totalProducts: 0, lowStock: 0, revenue: 0 })
       setRecentOrders(data.recentOrders || [])
+      setError(null)
     } catch (err) {
-      console.error('Dashboard error:', err)
-      setError('Failed to load dashboard data')
+      console.error('Dashboard fetch error:', err)
+      setError(err.message)
     } finally {
       setLoading(false)
     }
@@ -48,14 +49,17 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
-        >
-          Retry
-        </button>
+      <div className="max-w-2xl mx-auto py-12 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-red-600 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
