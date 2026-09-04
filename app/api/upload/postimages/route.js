@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/api/upload/postimages/route.js
 // LOCATION: /app/api/upload/postimages/route.js
-// PURPOSE: Upload image to PostImages
+// PURPOSE: Upload image to PostImages (handles XML response)
 // URL: /api/upload/postimages
 // ============================================
 
@@ -32,21 +32,54 @@ export async function POST(request) {
       body: uploadFormData
     })
 
-    const data = await response.json()
+    // Get response as text first
+    const textResponse = await response.text()
+    console.log('PostImages Response:', textResponse.substring(0, 200)) // Log first 200 chars
 
-    if (data.success) {
-      const imageUrl = data.url || data.image?.url || data.media?.url
+    // Check if response is XML
+    if (textResponse.trim().startsWith('<?xml')) {
+      // Extract image URL from XML
+      const urlMatch = textResponse.match(/<url>(.*?)<\/url>/)
+      const thumbMatch = textResponse.match(/<thumb>(.*?)<\/thumb>/)
+      
+      if (urlMatch && urlMatch[1]) {
+        return NextResponse.json({
+          success: true,
+          url: urlMatch[1],
+          thumb: thumbMatch ? thumbMatch[1] : urlMatch[1]
+        })
+      }
       
       return NextResponse.json({
-        success: true,
-        url: imageUrl,
-        thumb: data.thumb || imageUrl
-      })
-    } else {
+        success: false,
+        error: 'XML response but no URL found'
+      }, { status: 400 })
+    }
+
+    // Try to parse as JSON
+    try {
+      const data = JSON.parse(textResponse)
+      
+      if (data.success) {
+        const imageUrl = data.url || data.image?.url || data.media?.url
+        
+        return NextResponse.json({
+          success: true,
+          url: imageUrl,
+          thumb: data.thumb || imageUrl
+        })
+      } else {
+        return NextResponse.json({
+          success: false,
+          error: data.error || 'Upload failed'
+        }, { status: 400 })
+      }
+    } catch (parseError) {
+      console.error('JSON Parse Error:', parseError)
       return NextResponse.json({
         success: false,
-        error: data.error || 'Upload failed'
-      }, { status: 400 })
+        error: 'Invalid response from server'
+      }, { status: 500 })
     }
 
   } catch (error) {
