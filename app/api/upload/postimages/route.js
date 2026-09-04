@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/api/upload/postimages/route.js
 // LOCATION: /app/api/upload/postimages/route.js
-// PURPOSE: Upload image to PostImages (handles XML response)
+// PURPOSE: Upload image to PostImages (with debugging)
 // URL: /api/upload/postimages
 // ============================================
 
@@ -19,66 +19,67 @@ export async function POST(request) {
       }, { status: 400 })
     }
 
+    // Log image details
+    console.log('Image details:', {
+      name: image.name,
+      size: image.size,
+      type: image.type
+    })
+
     const uploadFormData = new FormData()
     uploadFormData.append('upload', image)
     uploadFormData.append('format', 'json')
     
-    if (process.env.POSTIMAGES_API_KEY) {
-      uploadFormData.append('api_key', process.env.POSTIMAGES_API_KEY)
-    }
+    // Try without API key first (PostImages allows uploads without key)
+    // if (process.env.POSTIMAGES_API_KEY) {
+    //   uploadFormData.append('api_key', process.env.POSTIMAGES_API_KEY)
+    // }
 
     const response = await fetch('https://api.postimage.org/1/upload', {
       method: 'POST',
       body: uploadFormData
     })
 
-    // Get response as text first
-    const textResponse = await response.text()
-    console.log('PostImages Response:', textResponse.substring(0, 200)) // Log first 200 chars
+    // Log response status
+    console.log('Response status:', response.status)
+    console.log('Response headers:', response.headers.get('content-type'))
 
-    // Check if response is XML
+    const textResponse = await response.text()
+    console.log('Response body (first 300 chars):', textResponse.substring(0, 300))
+
+    // Try XML first
     if (textResponse.trim().startsWith('<?xml')) {
-      // Extract image URL from XML
       const urlMatch = textResponse.match(/<url>(.*?)<\/url>/)
-      const thumbMatch = textResponse.match(/<thumb>(.*?)<\/thumb>/)
-      
       if (urlMatch && urlMatch[1]) {
         return NextResponse.json({
           success: true,
-          url: urlMatch[1],
-          thumb: thumbMatch ? thumbMatch[1] : urlMatch[1]
+          url: urlMatch[1]
         })
       }
-      
       return NextResponse.json({
         success: false,
         error: 'XML response but no URL found'
       }, { status: 400 })
     }
 
-    // Try to parse as JSON
+    // Try JSON
     try {
       const data = JSON.parse(textResponse)
-      
-      if (data.success) {
-        const imageUrl = data.url || data.image?.url || data.media?.url
-        
+      if (data.success && data.url) {
         return NextResponse.json({
           success: true,
-          url: imageUrl,
-          thumb: data.thumb || imageUrl
+          url: data.url
         })
-      } else {
-        return NextResponse.json({
-          success: false,
-          error: data.error || 'Upload failed'
-        }, { status: 400 })
       }
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError)
       return NextResponse.json({
         success: false,
-        error: 'Invalid response from server'
+        error: data.error || 'Upload failed'
+      }, { status: 400 })
+    } catch (parseError) {
+      console.error('Parse error:', parseError)
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid response from server: ' + textResponse.substring(0, 100)
       }, { status: 500 })
     }
 
