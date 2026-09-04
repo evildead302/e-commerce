@@ -13,18 +13,23 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchOrders()
   }, [filter])
 
   const fetchOrders = async () => {
+    setLoading(true)
+    setError(null)
     try {
       const res = await fetch(`/api/admin/orders?status=${filter}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setOrders(data)
-    } catch (error) {
-      console.error('Error fetching orders:', error)
+      setOrders(data || [])
+    } catch (err) {
+      console.error('Orders error:', err)
+      setError('Failed to load orders')
     } finally {
       setLoading(false)
     }
@@ -43,6 +48,7 @@ export default function OrdersPage() {
   }
 
   if (loading) return <div className="text-center py-12">Loading orders...</div>
+  if (error) return <div className="text-center py-12 text-red-500">{error}</div>
 
   return (
     <div>
@@ -79,48 +85,43 @@ export default function OrdersPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="p-3">
-                  <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
-                    #{order.id.slice(-6)}
-                  </Link>
-                </td>
-                <td className="p-3">
-                  <p className="font-medium">{order.user?.name}</p>
-                  <p className="text-sm text-gray-500">{order.user?.email}</p>
-                </td>
-                <td className="p-3 text-sm">{order.items?.length || 0}</td>
-                <td className="p-3 font-medium">${order.total.toFixed(2)}</td>
-                <td className="p-3">
-                  <span className="text-sm">{order.paymentMethod?.replace('_', ' ')}</span>
-                  <span className={`
-                    text-xs px-2 py-0.5 rounded-full ml-2
-                    ${order.paymentStatus === 'VERIFIED' ? 'bg-green-100 text-green-700' :
-                      order.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'}
-                  `}>
-                    {order.paymentStatus}
-                  </span>
-                </td>
-                <td className="p-3">
-                  <span className={`
-                    text-xs px-2 py-1 rounded-full
-                    ${getStatusColor(order.status)}
-                  `}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="p-3">
-                  <Link
-                    href={`/admin/orders/${order.id}`}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    View
-                  </Link>
-                </td>
+            {orders.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="p-4 text-center text-gray-500">No orders found</td>
               </tr>
-            ))}
+            ) : (
+              orders.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="p-3">
+                    <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
+                      #{order.id?.slice(-6) || 'N/A'}
+                    </Link>
+                  </td>
+                  <td className="p-3">
+                    <p className="font-medium">{order.customerName || order.user?.name || 'Unknown'}</p>
+                    <p className="text-sm text-gray-500">{order.customerWhatsApp || order.user?.email || ''}</p>
+                  </td>
+                  <td className="p-3 text-sm">{order.items?.length || 0}</td>
+                  <td className="p-3 font-medium">${(order.total || 0).toFixed(2)}</td>
+                  <td className="p-3">
+                    <span className="text-sm">{order.paymentMethod?.replace('_', ' ') || 'N/A'}</span>
+                  </td>
+                  <td className="p-3">
+                    <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                      {order.status || 'PENDING'}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
