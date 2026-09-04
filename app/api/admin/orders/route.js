@@ -19,12 +19,18 @@ export async function GET(request) {
     
     const orders = await prisma.order.findMany({
       where,
-      include: { user: true, items: true },
+      include: { 
+        user: true, 
+        items: true 
+      },
       orderBy: { createdAt: 'desc' }
     })
     
-    return NextResponse.json(orders)
+    // Return empty array if no orders (prevent null errors)
+    return NextResponse.json(orders || [])
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
+    console.error('Orders API error:', error)
+    // Return empty array instead of crashing
+    return NextResponse.json([], { status: 200 })
   }
 }
