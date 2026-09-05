@@ -440,4 +440,4 @@ export default function EditProduct({ params }) {
       </form>
     </div>
   )
-}
+              }
