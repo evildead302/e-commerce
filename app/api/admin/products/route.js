@@ -1,24 +1,20 @@
 // ============================================
 // FILE: app/api/admin/products/route.js
 // LOCATION: /app/api/admin/products/route.js
-// PURPOSE: Get all products and create new product
+// PURPOSE: Create new product with product number
 // ============================================
 
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-// 🎯 Generate next product number
+// 🎯 Generate product number
 async function generateProductNumber() {
-  // Count existing products
   const count = await prisma.product.count()
-  
-  // Next ID = count + 1
   const nextId = count + 1
-  
   return `PRD-${nextId}`
 }
 
-// GET - Get all products with filter
+// GET - Get all products
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -63,12 +59,12 @@ export async function POST(request) {
   try {
     const data = await request.json()
     
-    // ✅ Generate product number (PRD-1, PRD-2, PRD-3...)
+    // ✅ Generate product number for NEW products
     const productNumber = await generateProductNumber()
     
     const product = await prisma.product.create({
       data: {
-        productNumber: productNumber,
+        productNumber: productNumber,  // ← THIS WAS MISSING
         ...data
       }
     })
@@ -76,7 +72,7 @@ export async function POST(request) {
     return NextResponse.json({ 
       success: true, 
       product,
-      message: `Product ${productNumber} created successfully!`
+      message: `Product ${productNumber} created!`
     })
   } catch (error) {
     console.error('Error creating product:', error)
