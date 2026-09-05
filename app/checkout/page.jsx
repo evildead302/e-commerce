@@ -296,7 +296,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Delivery Charges</span>
-                <span>{total > 3500 ? 'Rs. 0.00 (FREE)' : 'Rs. 200.00'}</span>
+                <span>{total > 3500 ? 'Rs. 0.00 (FREE)' : 'Rs. 250.00'}</span>
               </div>
               <div className="flex justify-between text-lg font-bold mt-2">
                 <span>Total</span>
