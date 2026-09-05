@@ -11,16 +11,16 @@ import Link from 'next/link'
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
     fetchProducts()
-  }, [filter])
+  }, [])
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(`/api/admin/products?filter=${filter}`)
+      const res = await fetch('/api/admin/products')
       const data = await res.json()
       setProducts(data)
     } catch (error) {
@@ -30,42 +30,15 @@ export default function AdminProducts() {
     }
   }
 
-  const getTotalStock = (product) => {
-    if (!product.isVariant) return product.stock || 0
-    const variants = [
-      product.variant1_stock,
-      product.variant2_stock,
-      product.variant3_stock,
-      product.variant4_stock,
-      product.variant5_stock,
-      product.variant6_stock
-    ]
-    return variants.reduce((sum, s) => sum + (s || 0), 0)
-  }
-
-  const getStockStatus = (product) => {
-    const total = getTotalStock(product)
-    if (total === 0) return { label: 'Out of Stock', color: 'red' }
-    if (total < 5) return { label: 'Low Stock', color: 'orange' }
-    return { label: 'In Stock', color: 'green' }
-  }
-
-  const deleteProduct = async (id) => {
-    if (!confirm('Are you sure you want to delete this product?')) return
-    
-    try {
-      const res = await fetch(`/api/admin/products/${id}`, {
-        method: 'DELETE'
-      })
-      
-      if (res.ok) {
-        alert('✅ Product deleted!')
-        fetchProducts()
-      }
-    } catch (error) {
-      alert('❌ Failed to delete product')
-    }
-  }
+  // Filter products by ID or name
+  const filteredProducts = products.filter(product => {
+    const searchTerm = search.toLowerCase()
+    return (
+      product.productNumber?.toLowerCase().includes(searchTerm) ||
+      product.name?.toLowerCase().includes(searchTerm) ||
+      product.id?.toLowerCase().includes(searchTerm)
+    )
+  })
 
   if (loading) return <div className="text-center py-12">Loading products...</div>
 
@@ -74,16 +47,13 @@ export default function AdminProducts() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Products</h1>
         <div className="flex gap-2">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg"
-          >
-            <option value="all">All Products</option>
-            <option value="in-stock">In Stock</option>
-            <option value="low-stock">Low Stock</option>
-            <option value="out-of-stock">Out of Stock</option>
-          </select>
+          <input
+            type="text"
+            placeholder="Search by ID or Name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-4 py-2 border rounded-lg w-64"
+          />
           <Link
             href="/admin/products/new"
             className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
@@ -93,63 +63,61 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {products.map((product) => {
-          const stockStatus = getStockStatus(product)
-          const totalStock = getTotalStock(product)
-          
-          return (
-            <div key={product.id} className="bg-white p-4 rounded-lg border flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                {product.image1 && (
-                  <img 
-                    src={product.image1} 
-                    alt={product.name}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                )}
-                <div>
-                  <h3 className="font-medium">{product.name}</h3>
-                  <p className="text-sm text-gray-500">{product.brand}</p>
-                  <div className="flex gap-2 mt-1">
-                    {product.categories?.slice(0, 3).map((cat, i) => (
-                      <span key={i} className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                        {cat}
+      <div className="bg-white rounded-lg border overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">ID</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Name</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Brand</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Stock</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {filteredProducts.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="p-4 text-center text-gray-500">No products found</td>
+              </tr>
+            ) : (
+              filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50">
+                  <td className="p-3">
+                    <span className="font-mono text-sm">#{product.productNumber}</span>
+                  </td>
+                  <td className="p-3">{product.name}</td>
+                  <td className="p-3">{product.brand || '-'}</td>
+                  <td className="p-3">
+                    {product.isVariant ? (
+                      <span className="text-sm">
+                        {product.variant1_stock + product.variant2_stock + product.variant3_stock + 
+                         product.variant4_stock + product.variant5_stock + product.variant6_stock || 0} units
                       </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-right">
-                <p className="text-2xl font-bold">{totalStock}</p>
-                <p className={`text-sm font-medium text-${stockStatus.color}-500`}>
-                  {stockStatus.label}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  <Link
-                    href={`/admin/products/${product.id}/edit`}
-                    className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
-                  >
-                    Edit
-                  </Link>
-                  <Link
-                    href={`/admin/products/${product.id}/stock`}
-                    className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
-                  >
-                    Stock
-                  </Link>
-                  <button
-                    onClick={() => deleteProduct(product.id)}
-                    className="px-3 py-1 text-sm border rounded text-red-500 hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+                    ) : (
+                      <span>{product.stock || 0}</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/admin/products/${product.id}/edit`}
+                        className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
+                      >
+                        Edit
+                      </Link>
+                      <Link
+                        href={`/admin/products/${product.id}/stock`}
+                        className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
+                      >
+                        Stock
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )
