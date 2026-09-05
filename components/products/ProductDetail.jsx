@@ -93,6 +93,7 @@ export default function ProductDetail({ product }) {
   const stockStatus = getStockStatus()
   const displayPrice = selectedVariant?.price || product.price || 0
 
+  // ✅ FIXED: Include productId when adding to cart
   const handleAddToCart = () => {
     if (!selectedVariant && product.isVariant) {
       alert('Please select size and color')
@@ -100,13 +101,13 @@ export default function ProductDetail({ product }) {
     }
 
     const cartItem = {
-      id: product.isVariant ? `${product.id}_${selectedVariant.label}` : product.id,
-      productId: product.id,
+      id: product.isVariant ? selectedVariant.id : product.id,
+      productId: product.id, // ✅ ADD THIS
       name: product.name,
       size: selectedSize || 'N/A',
       color: selectedColor || 'N/A',
       price: displayPrice,
-      image: images[0] || '/placeholder-product.jpg',
+      image: images[0] || '/images/placeholder-product.jpg',
       quantity: quantity,
       stock: selectedVariant?.stock || product.stock || 0
     }
@@ -161,7 +162,7 @@ export default function ProductDetail({ product }) {
           <p className="text-sm text-gray-600 mt-1">{product.material}</p>
           
           <div className="mt-3 text-2xl font-bold">
-            ${displayPrice.toFixed(2)}
+            Rs. {displayPrice.toFixed(2)}
           </div>
 
           <div className="mt-2">
