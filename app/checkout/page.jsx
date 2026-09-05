@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/checkout/page.jsx
 // LOCATION: /app/checkout/page.jsx
-// PURPOSE: Checkout with WhatsApp as identity
+// PURPOSE: Checkout with WhatsApp as identity (PKR)
 // ============================================
 
 'use client'
@@ -23,6 +23,10 @@ export default function CheckoutPage() {
   
   const total = getTotal()
 
+  // 🎯 Calculate delivery charges (Free above 3500 PKR)
+  const shippingCharge = total > 3500 ? 0 : 250
+  const finalTotal = total + shippingCharge
+
   // 🎯 Check if customer exists by WhatsApp number
   const checkCustomer = async (phone) => {
     if (phone.length < 10) return
@@ -35,10 +39,6 @@ export default function CheckoutPage() {
       if (data.exists) {
         setExistingCustomer(data.customer)
         setCustomerName(data.customer.name)
-        // Pre-fill address if available
-        if (data.customer.address) {
-          // You can pre-fill address fields here
-        }
       } else {
         setExistingCustomer(null)
       }
@@ -63,7 +63,6 @@ export default function CheckoutPage() {
     const formData = new FormData(e.target)
     
     const orderData = {
-      // 🎯 WhatsApp number is the key identifier
       customerWhatsApp: formData.get('whatsapp'),
       customerName: formData.get('name'),
       customerEmail: formData.get('email') || null,
@@ -78,9 +77,9 @@ export default function CheckoutPage() {
       })),
       
       subtotal: total,
-      tax: total * 0.1,
-      shipping: 0,
-      total: total + (total * 0.1),
+      tax: 0, // No tax
+      shipping: shippingCharge,
+      total: finalTotal,
       
       paymentMethod,
       paymentNote: formData.get('paymentNote') || '',
@@ -115,7 +114,7 @@ export default function CheckoutPage() {
         alert('❌ Failed to place order: ' + data.error)
       }
     } catch (error) {
-      alert('❌ Failed to place order')
+      alert('❌ Failed to place order: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -137,7 +136,7 @@ export default function CheckoutPage() {
       <h1 className="text-2xl font-bold mb-6">Checkout</h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 🎯 Customer Details with WhatsApp */}
+        {/* Customer Details with WhatsApp */}
         <div className="bg-white p-6 rounded-lg border">
           <h2 className="font-semibold mb-4">Contact Details</h2>
           <p className="text-sm text-gray-500 mb-4">
@@ -221,7 +220,7 @@ export default function CheckoutPage() {
             />
             <input
               name="country"
-              placeholder="Country *"
+              placeholder="Pakistan"
               required
               className="p-2 border rounded md:col-span-2"
             />
@@ -269,6 +268,7 @@ export default function CheckoutPage() {
               <p className="text-sm font-medium">Bank Details:</p>
               <p className="text-sm">Account: 1234567890</p>
               <p className="text-sm">Bank: Your Bank Name</p>
+              <p className="text-sm">IBAN: PK00XXXX1234567890</p>
               <textarea
                 name="paymentNote"
                 placeholder="Any notes about your payment?"
@@ -286,21 +286,21 @@ export default function CheckoutPage() {
             {items.map((item, index) => (
               <div key={index} className="flex justify-between text-sm">
                 <span>{item.name} x{item.quantity} ({item.size}/{item.color})</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>Rs. {(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
-                <span>${total.toFixed(2)}</span>
+                <span>Rs. {total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Tax (10%)</span>
-                <span>${(total * 0.1).toFixed(2)}</span>
+                <span>Delivery Charges</span>
+                <span>{total > 3500 ? 'Rs. 0.00 (FREE)' : 'Rs. 200.00'}</span>
               </div>
               <div className="flex justify-between text-lg font-bold mt-2">
                 <span>Total</span>
-                <span>${(total + (total * 0.1)).toFixed(2)}</span>
+                <span>Rs. {finalTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function CheckoutPage() {
           disabled={loading}
           className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-50"
         >
-          {loading ? 'Placing Order...' : 'Place Order'}
+          {loading ? 'Placing Order...' : `Place Order - Rs. ${finalTotal.toFixed(2)}`}
         </button>
       </form>
     </div>
