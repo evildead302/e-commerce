@@ -48,7 +48,7 @@ export default function OrdersPage() {
     return colors[status] || 'bg-gray-100 text-gray-700'
   }
 
-  // ✅ Filter orders by orderNumber, customer name, or WhatsApp
+  // ✅ Search by orderNumber, customer name, WhatsApp, or internal id
   const filteredOrders = orders.filter(order => {
     const searchTerm = search.toLowerCase()
     return (
@@ -69,7 +69,7 @@ export default function OrdersPage() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search by Order #, Customer, WhatsApp..."
+            placeholder="🔍 Search by Order #, Customer, WhatsApp..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border rounded-lg w-64"
