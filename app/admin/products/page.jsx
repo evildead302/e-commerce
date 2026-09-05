@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/admin/products/page.jsx
 // LOCATION: /app/admin/products/page.jsx
-// PURPOSE: List all products with stock management
+// PURPOSE: List all products with search by product number
 // ============================================
 
 'use client'
@@ -30,12 +30,13 @@ export default function AdminProducts() {
     }
   }
 
-  // Filter products by ID or name
+  // ✅ Filter products by productNumber, name, or id
   const filteredProducts = products.filter(product => {
     const searchTerm = search.toLowerCase()
     return (
       product.productNumber?.toLowerCase().includes(searchTerm) ||
       product.name?.toLowerCase().includes(searchTerm) ||
+      product.brand?.toLowerCase().includes(searchTerm) ||
       product.id?.toLowerCase().includes(searchTerm)
     )
   })
@@ -49,7 +50,7 @@ export default function AdminProducts() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search by ID or Name..."
+            placeholder="Search by Product #, Name, Brand..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border rounded-lg w-64"
@@ -67,7 +68,7 @@ export default function AdminProducts() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-3 text-left text-sm font-medium text-gray-500">ID</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Product #</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Name</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Brand</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Stock</th>
@@ -83,7 +84,9 @@ export default function AdminProducts() {
               filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="p-3">
-                    <span className="font-mono text-sm">#{product.productNumber}</span>
+                    <span className="font-mono text-sm font-bold">
+                      {product.productNumber || 'N/A'}
+                    </span>
                   </td>
                   <td className="p-3">{product.name}</td>
                   <td className="p-3">{product.brand || '-'}</td>
