@@ -7,6 +7,43 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
+// 🎯 Generate Order Number (250905143022042)
+async function generateOrderNumber() {
+  const now = new Date()
+  
+  // YYMMDDHHMMSS
+  const year = String(now.getFullYear()).slice(-2)
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  
+  const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`
+  
+  // 3-digit random (001-999)
+  const random = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')
+  let orderNumber = `${timestamp}${random}`
+  
+  // Check if order number already exists
+  let exists = await prisma.order.findUnique({
+    where: { orderNumber: orderNumber }
+  })
+  
+  // If collision, regenerate random part (max 5 attempts)
+  let attempts = 0
+  while (exists && attempts < 5) {
+    const newRandom = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')
+    orderNumber = `${timestamp}${newRandom}`
+    exists = await prisma.order.findUnique({
+      where: { orderNumber: orderNumber }
+    })
+    attempts++
+  }
+  
+  return orderNumber
+}
+
 export async function POST(request) {
   try {
     const data = await request.json()
@@ -105,10 +142,14 @@ export async function POST(request) {
       }
     }
 
+    // 🎯 Generate order number
+    const orderNumber = await generateOrderNumber()
+
     // Create order
     const order = await prisma.$transaction(async (prisma) => {
       const newOrder = await prisma.order.create({
         data: {
+          orderNumber: orderNumber, // ✅ Add order number
           customerId: customer.id,
           customerName,
           customerWhatsApp: cleanWhatsApp,
@@ -190,10 +231,12 @@ export async function POST(request) {
       return newOrder
     })
 
+    // Return order with orderNumber
     return NextResponse.json({ 
       success: true, 
       orderId: order.id,
-      message: 'Order placed successfully!'
+      orderNumber: orderNumber, // ✅ Return order number to customer
+      message: `Order ${orderNumber} placed successfully!`
     })
 
   } catch (error) {
