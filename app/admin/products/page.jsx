@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/admin/products/page.jsx
 // LOCATION: /app/admin/products/page.jsx
-// PURPOSE: List all products with search by product number
+// PURPOSE: List all products with product number and search
 // ============================================
 
 'use client'
@@ -30,7 +30,7 @@ export default function AdminProducts() {
     }
   }
 
-  // ✅ Search by productNumber, name, brand, or internal id
+  // ✅ Search by productNumber, name, brand, or id
   const filteredProducts = products.filter(product => {
     const searchTerm = search.toLowerCase()
     return (
@@ -48,6 +48,7 @@ export default function AdminProducts() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Products</h1>
         <div className="flex gap-2">
+          {/* ✅ SEARCH BAR - ADD THIS */}
           <input
             type="text"
             placeholder="🔍 Search by Product #, Name, Brand..."
@@ -68,9 +69,11 @@ export default function AdminProducts() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
+              {/* ✅ PRODUCT # COLUMN - ADD THIS */}
               <th className="p-3 text-left text-sm font-medium text-gray-500">Product #</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Name</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Brand</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Price</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Stock</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Actions</th>
             </tr>
@@ -78,11 +81,12 @@ export default function AdminProducts() {
           <tbody className="divide-y">
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-4 text-center text-gray-500">No products found</td>
+                <td colSpan="6" className="p-4 text-center text-gray-500">No products found</td>
               </tr>
             ) : (
               filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
+                  {/* ✅ PRODUCT NUMBER - ADD THIS */}
                   <td className="p-3">
                     <span className="font-mono text-sm font-bold">
                       {product.productNumber || 'N/A'}
@@ -90,6 +94,7 @@ export default function AdminProducts() {
                   </td>
                   <td className="p-3">{product.name}</td>
                   <td className="p-3">{product.brand || '-'}</td>
+                  <td className="p-3">Rs. {(product.price || 0).toFixed(2)}</td>
                   <td className="p-3">
                     {product.isVariant ? (
                       <span className="text-sm">
