@@ -75,7 +75,7 @@ export default function OrdersPage() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-3 text-left text-sm font-medium text-gray-500">Order</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-500">Order #</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Customer</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Items</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Total</th>
@@ -94,7 +94,7 @@ export default function OrdersPage() {
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="p-3">
                     <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
-                      #{order.id?.slice(-6) || 'N/A'}
+                      #{order.orderNumber || order.id?.slice(-6) || 'N/A'}
                     </Link>
                   </td>
                   <td className="p-3">
@@ -102,7 +102,7 @@ export default function OrdersPage() {
                     <p className="text-sm text-gray-500">{order.customerWhatsApp || order.user?.email || ''}</p>
                   </td>
                   <td className="p-3 text-sm">{order.items?.length || 0}</td>
-                  <td className="p-3 font-medium">${(order.total || 0).toFixed(2)}</td>
+                  <td className="p-3 font-medium">Rs. {(order.total || 0).toFixed(2)}</td>
                   <td className="p-3">
                     <span className="text-sm">{order.paymentMethod?.replace('_', ' ') || 'N/A'}</span>
                   </td>
