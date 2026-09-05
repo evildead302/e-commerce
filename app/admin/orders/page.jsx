@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/admin/orders/page.jsx
 // LOCATION: /app/admin/orders/page.jsx
-// PURPOSE: List all orders with filters
+// PURPOSE: List all orders with search by order number
 // ============================================
 
 'use client'
@@ -12,6 +12,7 @@ import Link from 'next/link'
 export default function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -47,6 +48,17 @@ export default function OrdersPage() {
     return colors[status] || 'bg-gray-100 text-gray-700'
   }
 
+  // ✅ Filter orders by orderNumber, customer name, or WhatsApp
+  const filteredOrders = orders.filter(order => {
+    const searchTerm = search.toLowerCase()
+    return (
+      order.orderNumber?.toLowerCase().includes(searchTerm) ||
+      order.customerName?.toLowerCase().includes(searchTerm) ||
+      order.customerWhatsApp?.includes(searchTerm) ||
+      order.id?.toLowerCase().includes(searchTerm)
+    )
+  })
+
   if (loading) return <div className="text-center py-12">Loading orders...</div>
   if (error) return <div className="text-center py-12 text-red-500">{error}</div>
 
@@ -55,6 +67,13 @@ export default function OrdersPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Orders</h1>
         <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search by Order #, Customer, WhatsApp..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-4 py-2 border rounded-lg w-64"
+          />
           <select 
             value={filter} 
             onChange={(e) => setFilter(e.target.value)}
@@ -85,12 +104,12 @@ export default function OrdersPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {orders.length === 0 ? (
+            {filteredOrders.length === 0 ? (
               <tr>
                 <td colSpan="7" className="p-4 text-center text-gray-500">No orders found</td>
               </tr>
             ) : (
-              orders.map((order) => (
+              filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="p-3">
                     <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
