@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/checkout/page.jsx
 // LOCATION: /app/checkout/page.jsx
-// PURPOSE: Checkout with WhatsApp as identity (PKR)
+// PURPOSE: Checkout with WhatsApp as identity
 // ============================================
 
 'use client'
@@ -24,7 +24,7 @@ export default function CheckoutPage() {
   const total = getTotal()
 
   // 🎯 Calculate delivery charges (Free above 3500 PKR)
-  const shippingCharge = total > 3500 ? 0 : 250
+  const shippingCharge = total > 3500 ? 0 : 200
   const finalTotal = total + shippingCharge
 
   // 🎯 Check if customer exists by WhatsApp number
@@ -63,12 +63,15 @@ export default function CheckoutPage() {
     const formData = new FormData(e.target)
     
     const orderData = {
+      // Customer details
       customerWhatsApp: formData.get('whatsapp'),
       customerName: formData.get('name'),
       customerEmail: formData.get('email') || null,
       
+      // ✅ FIXED: Include productId for each item
       items: items.map(item => ({
         variantId: item.id,
+        productId: item.productId || item.id, // ✅ MUST HAVE
         quantity: item.quantity,
         price: item.price,
         size: item.size,
@@ -108,7 +111,7 @@ export default function CheckoutPage() {
       
       if (data.success) {
         clearCart()
-        alert('✅ Order placed successfully! Check WhatsApp for confirmation.')
+        alert(`✅ Order ${data.orderNumber || ''} placed successfully! Check WhatsApp for confirmation.`)
         router.push(`/orders/${data.orderId}`)
       } else {
         alert('❌ Failed to place order: ' + data.error)
@@ -296,7 +299,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Delivery Charges</span>
-                <span>{total > 3500 ? 'Rs. 0.00 (FREE)' : 'Rs. 250.00'}</span>
+                <span>{total > 3500 ? 'Rs. 0.00 (FREE)' : 'Rs. 200.00'}</span>
               </div>
               <div className="flex justify-between text-lg font-bold mt-2">
                 <span>Total</span>
@@ -323,4 +326,4 @@ export default function CheckoutPage() {
       </form>
     </div>
   )
-}
+      }
