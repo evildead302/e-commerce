@@ -12,6 +12,7 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       
+      // ✅ FIXED: Preserve productId when adding to cart
       addToCart: (item) => {
         const { items } = get()
         const existingItem = items.find(
@@ -27,7 +28,14 @@ export const useCartStore = create(
             )
           })
         } else {
-          set({ items: [...items, { ...item, id: `${item.id}-${Date.now()}` }] })
+          // ✅ Make sure productId is preserved
+          set({ 
+            items: [...items, { 
+              ...item, 
+              id: `${item.id}-${Date.now()}`,
+              productId: item.productId || item.id // ✅ ADD THIS
+            }] 
+          })
         }
       },
       
