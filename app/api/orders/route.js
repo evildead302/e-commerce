@@ -20,40 +20,34 @@ export async function POST(request) {
       paymentNote, 
       deliveryNotes,
       subtotal,
-      tax,
       shipping,
       total
     } = data
 
+    // Validate required fields
+    if (!customerName || !customerWhatsApp || !items || items.length === 0) {
+      return NextResponse.json({ 
+        error: 'Missing required fields' 
+      }, { status: 400 })
+    }
+
     // Clean WhatsApp number
     const cleanWhatsApp = customerWhatsApp.replace(/\s/g, '').replace(/^\+/, '')
 
-    // 🎯 Find or create customer
+    // Find or create customer
     let customer = await prisma.customer.findUnique({
       where: { whatsappNumber: cleanWhatsApp }
     })
 
     if (!customer) {
-      // Create new customer
       customer = await prisma.customer.create({
         data: {
           whatsappNumber: cleanWhatsApp,
           name: customerName,
           email: customerEmail || null,
-          address: `${shippingAddress.street}, ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`
+          address: shippingAddress ? `${shippingAddress.street}, ${shippingAddress.city}` : null
         }
       })
-    } else {
-      // Update customer info if changed
-      if (customer.name !== customerName || customer.email !== customerEmail) {
-        customer = await prisma.customer.update({
-          where: { id: customer.id },
-          data: {
-            name: customerName,
-            email: customerEmail || customer.email
-          }
-        })
-      }
     }
 
     // Check stock
@@ -69,8 +63,34 @@ export async function POST(request) {
       }
 
       if (product.isVariant) {
-        const variantKey = `variant${item.variantIndex}_stock`
-        const currentStock = product[variantKey] || 0
+        // Find the variant stock field
+        const variantFields = [
+          'variant1_stock', 'variant2_stock', 'variant3_stock',
+          'variant4_stock', 'variant5_stock', 'variant6_stock'
+        ]
+        const variantLabels = [
+          'variant1_label', 'variant2_label', 'variant3_label',
+          'variant4_label', 'variant5_label', 'variant6_label'
+        ]
+        
+        let variantIndex = -1
+        for (let i = 0; i < variantLabels.length; i++) {
+          const label = product[variantLabels[i]]
+          if (label && label.includes(item.size) && label.includes(item.color)) {
+            variantIndex = i
+            break
+          }
+        }
+        
+        if (variantIndex === -1) {
+          return NextResponse.json({ 
+            error: `Variant not found for ${item.size} ${item.color}` 
+          }, { status: 400 })
+        }
+        
+        const stockField = variantFields[variantIndex]
+        const currentStock = product[stockField] || 0
+        
         if (currentStock < item.quantity) {
           return NextResponse.json({ 
             error: `Not enough stock for ${product.name} - ${item.size} ${item.color}` 
@@ -98,20 +118,20 @@ export async function POST(request) {
           paymentNote,
           shippingAddress,
           deliveryNotes,
-          subtotal,
-          tax,
-          shipping,
-          total,
+          subtotal: subtotal || 0,
+          tax: 0, // No tax
+          shipping: shipping || 0,
+          total: total || subtotal || 0,
           status: 'PENDING',
           stockReduced: true,
           items: {
             create: items.map((item) => ({
-              variantId: item.variantId,
+              variantId: item.variantId || item.id,
               quantity: item.quantity,
               price: item.price,
-              size: item.size,
-              color: item.color,
-              productName: item.productName
+              size: item.size || 'N/A',
+              color: item.color || 'N/A',
+              productName: item.productName || item.name
             }))
           }
         },
@@ -127,13 +147,34 @@ export async function POST(request) {
         })
 
         if (product.isVariant) {
-          const variantKey = `variant${item.variantIndex}_stock`
-          const currentStock = product[variantKey] || 0
-          await prisma.$executeRaw`
-            UPDATE Product 
-            SET ${prisma.raw(variantKey)} = ${currentStock - item.quantity}
-            WHERE id = ${product.id}
-          `
+          const variantFields = [
+            'variant1_stock', 'variant2_stock', 'variant3_stock',
+            'variant4_stock', 'variant5_stock', 'variant6_stock'
+          ]
+          const variantLabels = [
+            'variant1_label', 'variant2_label', 'variant3_label',
+            'variant4_label', 'variant5_label', 'variant6_label'
+          ]
+          
+          let variantIndex = -1
+          for (let i = 0; i < variantLabels.length; i++) {
+            const label = product[variantLabels[i]]
+            if (label && label.includes(item.size) && label.includes(item.color)) {
+              variantIndex = i
+              break
+            }
+          }
+          
+          if (variantIndex !== -1) {
+            const stockField = variantFields[variantIndex]
+            const currentStock = product[stockField] || 0
+            await prisma.product.update({
+              where: { id: product.id },
+              data: {
+                [stockField]: currentStock - item.quantity
+              }
+            })
+          }
         } else {
           await prisma.product.update({
             where: { id: product.id },
@@ -149,26 +190,16 @@ export async function POST(request) {
       return newOrder
     })
 
-    // 🎯 Send WhatsApp notification to customer
-    // WhatsApp link will be generated in admin panel
-    
-    // Notify admin
-    console.log(`📦 New Order: #${order.id}`)
-    console.log(`Customer: ${customerName} (${cleanWhatsApp})`)
-    console.log(`Total: $${total}`)
-
     return NextResponse.json({ 
       success: true, 
       orderId: order.id,
-      customerId: customer.id,
-      isNewCustomer: customer.createdAt === customer.updatedAt,
       message: 'Order placed successfully!'
     })
 
   } catch (error) {
     console.error('Order creation error:', error)
     return NextResponse.json({ 
-      error: 'Failed to create order' 
+      error: 'Failed to create order: ' + error.message 
     }, { status: 500 })
   }
 }
