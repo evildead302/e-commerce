@@ -87,10 +87,10 @@ export async function POST(request) {
       })
     }
 
-    // Check stock
+    // ✅ FIXED: Check stock using productId
     for (const item of items) {
       const product = await prisma.product.findUnique({
-        where: { id: item.productId }
+        where: { id: item.productId } // ✅ Use item.productId
       })
       
       if (!product) {
@@ -142,14 +142,14 @@ export async function POST(request) {
       }
     }
 
-    // 🎯 Generate order number
+    // Generate order number
     const orderNumber = await generateOrderNumber()
 
     // Create order
     const order = await prisma.$transaction(async (prisma) => {
       const newOrder = await prisma.order.create({
         data: {
-          orderNumber: orderNumber, // ✅ Add order number
+          orderNumber: orderNumber,
           customerId: customer.id,
           customerName,
           customerWhatsApp: cleanWhatsApp,
@@ -160,7 +160,7 @@ export async function POST(request) {
           shippingAddress,
           deliveryNotes,
           subtotal: subtotal || 0,
-          tax: 0, // No tax
+          tax: 0,
           shipping: shipping || 0,
           total: total || subtotal || 0,
           status: 'PENDING',
@@ -181,7 +181,7 @@ export async function POST(request) {
         }
       })
 
-      // Reduce stock
+      // ✅ FIXED: Reduce stock using productId
       for (const item of items) {
         const product = await prisma.product.findUnique({
           where: { id: item.productId }
@@ -231,11 +231,10 @@ export async function POST(request) {
       return newOrder
     })
 
-    // Return order with orderNumber
     return NextResponse.json({ 
       success: true, 
       orderId: order.id,
-      orderNumber: orderNumber, // ✅ Return order number to customer
+      orderNumber: orderNumber,
       message: `Order ${orderNumber} placed successfully!`
     })
 
@@ -245,4 +244,4 @@ export async function POST(request) {
       error: 'Failed to create order: ' + error.message 
     }, { status: 500 })
   }
-}
+          }
