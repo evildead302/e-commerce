@@ -1,7 +1,7 @@
 // ============================================
 // FILE: prisma/schema.prisma
 // LOCATION: /prisma/schema.prisma
-// PURPOSE: Database schema
+// PURPOSE: Database schema with product and order numbers
 // ============================================
 
 generator client {
@@ -27,23 +27,27 @@ model Customer {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  categories  String[]
-  brand       String?
-  material    String?
-  isVariant   Boolean  @default(false)
+  id            String   @id @default(cuid())
+  productNumber String?  @unique                // ✅ PRD-1, PRD-2, PRD-3...
+  name          String
+  description   String?
+  categories    String[]
+  brand         String?
+  material      String?
+  isVariant     Boolean  @default(false)
   
-  image1      String?
-  image2      String?
-  image3      String?
-  image4      String?
-  image5      String?
+  // Images
+  image1        String?
+  image2        String?
+  image3        String?
+  image4        String?
+  image5        String?
   
-  price       Float?
-  stock       Int?
+  // Simple Product
+  price         Float?
+  stock         Int?
   
+  // Variants (6 max)
   variant1_label  String?
   variant1_stock  Int?
   variant1_price  Float?
@@ -80,6 +84,7 @@ model Product {
 
 model Order {
   id                String   @id @default(cuid())
+  orderNumber       String?  @unique                // ✅ 250905143022042
   
   customerId        String?
   customer          Customer? @relation(fields: [customerId], references: [id])
@@ -121,7 +126,7 @@ model Order {
 model OrderItem {
   id          String   @id @default(cuid())
   orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: CASCADE)
   variantId   String
   quantity    Int
   price       Float
