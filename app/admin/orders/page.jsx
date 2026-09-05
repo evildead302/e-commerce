@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/admin/orders/page.jsx
 // LOCATION: /app/admin/orders/page.jsx
-// PURPOSE: List all orders with search by order number
+// PURPOSE: List all orders with order number and search
 // ============================================
 
 'use client'
@@ -48,7 +48,7 @@ export default function OrdersPage() {
     return colors[status] || 'bg-gray-100 text-gray-700'
   }
 
-  // ✅ Search by orderNumber, customer name, WhatsApp, or internal id
+  // ✅ Search by orderNumber, customer name, WhatsApp, or id
   const filteredOrders = orders.filter(order => {
     const searchTerm = search.toLowerCase()
     return (
@@ -67,6 +67,7 @@ export default function OrdersPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Orders</h1>
         <div className="flex gap-2">
+          {/* ✅ SEARCH BAR - ADD THIS */}
           <input
             type="text"
             placeholder="🔍 Search by Order #, Customer, WhatsApp..."
@@ -94,6 +95,7 @@ export default function OrdersPage() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
+              {/* ✅ ORDER # COLUMN - ADD THIS */}
               <th className="p-3 text-left text-sm font-medium text-gray-500">Order #</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Customer</th>
               <th className="p-3 text-left text-sm font-medium text-gray-500">Items</th>
@@ -111,6 +113,7 @@ export default function OrdersPage() {
             ) : (
               filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
+                  {/* ✅ ORDER NUMBER - ADD THIS */}
                   <td className="p-3">
                     <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
                       #{order.orderNumber || order.id?.slice(-6) || 'N/A'}
@@ -146,4 +149,4 @@ export default function OrdersPage() {
       </div>
     </div>
   )
-}
+                  }
