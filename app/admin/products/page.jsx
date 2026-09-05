@@ -30,7 +30,7 @@ export default function AdminProducts() {
     }
   }
 
-  // ✅ Filter products by productNumber, name, or id
+  // ✅ Search by productNumber, name, brand, or internal id
   const filteredProducts = products.filter(product => {
     const searchTerm = search.toLowerCase()
     return (
@@ -50,7 +50,7 @@ export default function AdminProducts() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search by Product #, Name, Brand..."
+            placeholder="🔍 Search by Product #, Name, Brand..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border rounded-lg w-64"
