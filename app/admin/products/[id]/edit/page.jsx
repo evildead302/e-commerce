@@ -1,7 +1,7 @@
 // ============================================
 // FILE: app/admin/products/[id]/edit/page.jsx
 // LOCATION: /app/admin/products/[id]/edit/page.jsx
-// PURPOSE: Edit existing product
+// PURPOSE: Edit existing product with image management
 // ============================================
 
 'use client'
@@ -13,6 +13,7 @@ export default function EditProduct({ params }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [uploading, setUploading] = useState(false)
   
   // Product fields
   const [name, setName] = useState('')
@@ -45,15 +46,15 @@ export default function EditProduct({ params }) {
       const res = await fetch(`/api/admin/products/${params.id}`)
       const data = await res.json()
       
-      setName(data.name)
+      setName(data.name || '')
       setDescription(data.description || '')
       setCategory(data.categories?.join(', ') || '')
       setBrand(data.brand || '')
       setMaterial(data.material || '')
-      setIsVariant(data.isVariant)
-      setIsNew(data.isNew)
-      setIsSale(data.isSale)
-      setDiscount(data.discount || '')
+      setIsVariant(data.isVariant || false)
+      setIsNew(data.isNew || false)
+      setIsSale(data.isSale || false)
+      setDiscount(data.discount?.toString() || '')
       
       // Images
       setImages([
@@ -95,6 +96,44 @@ export default function EditProduct({ params }) {
     }
   }
 
+  // 🎯 Upload image to ImgBB
+  const uploadImage = async (file, index) => {
+    setUploading(true)
+    
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      
+      const res = await fetch('/api/upload/postimages', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const data = await res.json()
+      
+      if (data.success) {
+        const newImages = [...images]
+        newImages[index] = data.url
+        setImages(newImages)
+        alert('✅ Image uploaded successfully!')
+      } else {
+        alert('❌ Upload failed: ' + data.error)
+      }
+    } catch (error) {
+      alert('❌ Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // 🎯 Remove image
+  const removeImage = (index) => {
+    const newImages = [...images]
+    newImages[index] = ''
+    setImages(newImages)
+  }
+
+  // 🎯 Submit product
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -234,7 +273,7 @@ export default function EditProduct({ params }) {
           {!isVariant ? (
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Price *</label>
+                <label className="block text-sm font-medium mb-1">Price (PKR) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -261,7 +300,7 @@ export default function EditProduct({ params }) {
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm font-medium">Size, Color</span>
                 <span className="text-sm font-medium">Stock</span>
-                <span className="text-sm font-medium">Price</span>
+                <span className="text-sm font-medium">Price (PKR)</span>
               </div>
               {variants.map((variant, index) => (
                 <div key={index} className="grid grid-cols-3 gap-2">
@@ -304,41 +343,47 @@ export default function EditProduct({ params }) {
           )}
         </div>
         
-        {/* Image Upload */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Product Images</label>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {/* 🖼️ Image Upload Section */}
+        <div className="border p-4 rounded">
+          <h3 className="font-medium mb-2">Product Images</h3>
+          <p className="text-sm text-gray-500 mb-3">Upload up to 5 images. Click the camera icon to add.</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[0, 1, 2, 3, 4].map((index) => (
-              <div key={index} className="border-2 border-dashed rounded p-4 text-center relative aspect-square">
+              <div key={index} className="relative aspect-square border-2 border-dashed rounded-lg overflow-hidden bg-gray-50 hover:bg-gray-100 transition">
                 {images[index] ? (
-                  <div className="relative h-full">
+                  <>
                     <img 
                       src={images[index]} 
                       alt={`Image ${index + 1}`}
-                      className="w-full h-full object-cover rounded"
+                      className="w-full h-full object-cover"
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        const newImages = [...images]
-                        newImages[index] = ''
-                        setImages(newImages)
-                      }}
-                      className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full text-sm hover:bg-red-600"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full text-sm hover:bg-red-600 shadow-md"
                     >
                       ✕
                     </button>
-                  </div>
+                  </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                    <span className="text-3xl">📸</span>
-                    <span className="text-xs mt-1">No image</span>
-                  </div>
+                  <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) uploadImage(file, index)
+                      }}
+                    />
+                    <span className="text-3xl mb-1">📸</span>
+                    <span className="text-xs text-gray-400">Add Image</span>
+                  </label>
                 )}
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-1">Add images using the Add Product page</p>
+          {uploading && <p className="text-sm text-blue-500 mt-2">⏳ Uploading image...</p>}
         </div>
         
         {/* Additional Options */}
