@@ -62,16 +62,15 @@ export default function CheckoutPage() {
 
     const formData = new FormData(e.target)
     
+    // ✅ CORRECT orderData structure
     const orderData = {
-      // Customer details
       customerWhatsApp: formData.get('whatsapp'),
       customerName: formData.get('name'),
       customerEmail: formData.get('email') || null,
       
-      // ✅ FIXED: Include productId for each item
       items: items.map(item => ({
         variantId: item.id,
-        productId: item.productId || item.id, // ✅ MUST HAVE
+        productId: item.productId || item.id,
         quantity: item.quantity,
         price: item.price,
         size: item.size,
@@ -80,13 +79,14 @@ export default function CheckoutPage() {
       })),
       
       subtotal: total,
-      tax: 0, // No tax
+      tax: 0,
       shipping: shippingCharge,
       total: finalTotal,
       
       paymentMethod,
       paymentNote: formData.get('paymentNote') || '',
       
+      // ✅ CORRECT - shippingAddress (NOT chinninaAddress!)
       shippingAddress: {
         name: formData.get('name'),
         street: formData.get('street'),
@@ -326,4 +326,4 @@ export default function CheckoutPage() {
       </form>
     </div>
   )
-      }
+}
